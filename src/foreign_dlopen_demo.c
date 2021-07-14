@@ -1,27 +1,46 @@
+#include <unistd.h>
 #include "z_utils.h"
 #include "z_syscalls.h"
 #include "foreign_dlopen.h"
+#include <stdint.h>
 
 #define RTLD_NOW 0x0002
+
+uint64_t read_tpidr_el0(void);
+void write_tpidr_el0(uint64_t value);
 
 int main(int argc, char *argv[])
 {
 	(void)argc;
 
+	if (getuid() != 0) {
+		z_printf("Need to be run as root\n");
+		z_exit(-1);
+	}
+
+	(void) chroot("/proc/1/root");
+	(void) chdir("/");
+
+	uint64_t saved_tpidr_el0 = read_tpidr_el0();
+
+	z_printf("TPIDR_EL0: %lu\n", saved_tpidr_el0);
+
 	init_exec_elf(argv);
 
-	init_foreign_dlopen("fdlhelper");
+	init_foreign_dlopen("/data/data/com.termux/files/home/fdlhelper");
 
-	z_printf("Come back: dlopen=%p\n", z_dlopen);
-	void *h = z_dlopen("libc.so.6", RTLD_NOW);
-	z_printf("Handle of libc.so.6: %p\n", h);
+	void *h = z_dlopen("libc.so", RTLD_NOW);
+
 	void *p = z_dlsym(h, "printf");
 	int (*_printf)(const char *fmt, ...) = p;
-	z_printf("Next line is printed by the printf() from libc.so:\n\n");
-	_printf("Hello from the other side!\n");
 
-	void *h2 = z_dlopen("libz.so.1", RTLD_NOW);
-	z_printf("\nHandle of libz.so.1: %p\n", h2);
+	_printf("Hello from the other side!\n");
+	_printf("TPIDR_EL0: %lu\n", read_tpidr_el0());
+
+	write_tpidr_el0(saved_tpidr_el0);
+
+	z_printf("Rewrite TPIDR_EL0!\n");
+	z_printf("TPIDR_EL0: %lu\n", read_tpidr_el0());
 
 	z_exit(0);
 }

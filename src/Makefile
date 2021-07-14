@@ -44,7 +44,7 @@ endif
 
 ASFLAGS = $(CFLAGS)
 
-OBJS := loader.o z_err.o z_printf.o z_syscalls.o z_utils.o foreign_dlopen.o
+OBJS := loader.o z_err.o z_printf.o z_syscalls.o z_utils.o foreign_dlopen.o read_tpidr_el0.o
 OBJS += $(patsubst %.S,%.o, $(wildcard $(ARCH)/*.S))
 
 ifeq "$(SMALL)" "1"

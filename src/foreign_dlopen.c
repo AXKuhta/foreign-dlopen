@@ -12,7 +12,6 @@ char *(*z_dlerror)(void);
 
 void do_jump(void **p)
 {
-	z_printf("do_jump: %p\n", p);
 	z_dlopen = p[0];
 	z_dlsym = p[1];
 	z_dlclose = p[2];
